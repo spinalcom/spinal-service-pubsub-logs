@@ -1,0 +1,31 @@
+import { Model } from 'spinal-core-connectorjs_type';
+import { ILog, ISpinalDateValue } from '../interfaces';
+import { SpinalLogArchive } from './SpinalLogArchive';
+import { SpinalLogArchiveDay } from './SpinalLogArchiveDay';
+declare class SpinalLog extends Model {
+    static relationName: string;
+    static nodeTypeName: string;
+    id: spinal.Str;
+    currentArchive: spinal.Ptr<SpinalLogArchiveDay>;
+    archive: spinal.Ptr<SpinalLogArchive>;
+    archiveProm: Promise<SpinalLogArchive>;
+    currentProm: Promise<SpinalLogArchiveDay>;
+    private loadPtrDictionary;
+    maxDay: spinal.Val;
+    constructor(initialBlockSize?: number, maxDay?: number);
+    getFromIntervalTimeGen(start?: number | string | Date, end?: number | string | Date): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    getFromIntervalTime(start?: number | string | Date, end?: number | string | Date): Promise<ISpinalDateValue[]>;
+    getCurrent(): Promise<ISpinalDateValue>;
+    setConfig(initialBlockSize: number, maxDay: number): Promise<void>;
+    push(value: ILog): Promise<void>;
+    insert(value: ILog, date: number | string | Date): Promise<void>;
+    getDataOfDay(date: number | string | Date): Promise<SpinalLogArchiveDay>;
+    getArchive(): Promise<SpinalLogArchive>;
+    getCurrentDay(): Promise<SpinalLogArchiveDay>;
+    getDataFromYesterday(): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    getDataFromLast24Hours(): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    getDataFromLastHours(numberOfHours?: number): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    getDataFromLastDays(numberOfDays?: number): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+}
+export default SpinalLog;
+export { SpinalLog };
