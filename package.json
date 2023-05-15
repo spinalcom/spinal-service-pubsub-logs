@@ -2,7 +2,7 @@
   "name": "spinal-service-pubsub-logs",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "rm -rf dist && tsc",
     "dev": "rm -rf dist && tsc --watch & nodemon dist"

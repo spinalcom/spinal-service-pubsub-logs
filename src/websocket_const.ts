@@ -1,4 +1,3 @@
-"use strict";
 /*
  * Copyright 2023 SpinalCom - www.spinalcom.com
  *
@@ -22,17 +21,12 @@
  * with this file. If not, see
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TYPE = exports.REASON = void 0;
-var REASON;
-(function (REASON) {
-    REASON["restart"] = "restart";
-    REASON["send"] = "send";
-    REASON["noDataSent"] = "noDataSent";
-})(REASON = exports.REASON || (exports.REASON = {}));
-var TYPE;
-(function (TYPE) {
-    TYPE["alarm"] = "alarm";
-    TYPE["info"] = "info";
-})(TYPE = exports.TYPE || (exports.TYPE = {}));
-//# sourceMappingURL=ILog.js.map
+
+export enum WEBSOCKET_STATE {
+  running = 'running',
+  alarm = 'alarm',
+  unknow = 'unknow',
+}
+
+export const WEBSOCKET_STATE_RELATION = 'hasWebsocketState';
+export const WEBSOCKET_STATE_TYPE = 'WebsocketState';

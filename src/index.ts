@@ -29,18 +29,27 @@ import {attributeService} from 'spinal-env-viewer-plugin-documentation-service';
 import {SpinalAttribute} from 'spinal-models-documentation';
 import {ILog, ISpinalDateValue, ISpinalDateValueArray} from './interfaces';
 import {ILogInterval} from './interfaces/ILogInterval';
+import {
+  WEBSOCKET_STATE,
+  WEBSOCKET_STATE_RELATION,
+  WEBSOCKET_STATE_TYPE,
+} from './websocket_const';
 
 export default class SpinalServiceLog {
   private spinaLogsDictionnary: Map<string, Promise<SpinalLog>>;
+  private static _instance: SpinalServiceLog;
 
   constructor() {
     this.spinaLogsDictionnary = new Map();
   }
 
-  public async pushFromEndpoint(
-    node: SpinalNode,
-    value: ILog
-  ): Promise<boolean> {
+  public static getInstance(): SpinalServiceLog {
+    if (!this._instance) this._instance = new SpinalServiceLog();
+
+    return this._instance;
+  }
+
+  public async pushFromNode(node: SpinalNode, value: ILog): Promise<boolean> {
     try {
       const log = await this.getOrCreateLog(node);
       await log.push(value);
@@ -50,7 +59,7 @@ export default class SpinalServiceLog {
     return true;
   }
 
-  public async insertFromEndpoint(
+  public async insertFromNode(
     node: SpinalNode,
     value: ILog,
     date: number | string | Date
@@ -81,7 +90,7 @@ export default class SpinalServiceLog {
     if (this.spinaLogsDictionnary.has(nodeId)) {
       return this.spinaLogsDictionnary.get(nodeId);
     }
-    const cfg = await this.getConfigFormEndpoint(node);
+    const cfg = await this.getConfigFromNode(node);
     const promise: Promise<SpinalLog> = new Promise(
       this.getOrCreateLogProm(node, cfg)
     );
@@ -89,7 +98,7 @@ export default class SpinalServiceLog {
     return promise;
   }
 
-  private async getConfigFormEndpoint(
+  private async getConfigFromNode(
     node: SpinalNode
   ): Promise<{maxDay: number; initialBlockSize: number}> {
     try {
@@ -141,7 +150,11 @@ export default class SpinalServiceLog {
 
   private getOrCreateLogProm(
     node: SpinalNode,
-    cfg: {maxDay: number; initialBlockSize: number}
+    cfg: {maxDay: number; initialBlockSize: number} = {
+      maxDay: 2,
+      initialBlockSize: 50,
+    },
+    createIfNotExist: boolean = true
   ): (
     resolve: (value: SpinalLog | PromiseLike<SpinalLog>) => void,
     reject: (reason?: any) => void
@@ -149,12 +162,16 @@ export default class SpinalServiceLog {
     return async (resolve) => {
       const children = await node.getChildren([SpinalLog.relationName]);
       let logProm: SpinalLog | PromiseLike<SpinalLog>;
-      if (children.length === 0) {
+      if (children.length === 0 && createIfNotExist) {
         // create element
         const spinalLog = new SpinalLog(cfg.initialBlockSize, cfg.maxDay);
         logProm = spinalLog;
         // create node
-        const n = new SpinalNode('WebsocketLogs', 'Logs', spinalLog);
+        const n = new SpinalNode(
+          'WebsocketLogs',
+          SpinalLog.nodeTypeName,
+          spinalLog
+        );
         n.info.add_attr(spinalLog.id.get());
 
         // push node to parent
@@ -163,7 +180,7 @@ export default class SpinalServiceLog {
           SpinalLog.relationName,
           SPINAL_RELATION_PTR_LST_TYPE
         );
-      } else {
+      } else if (children.length > 0) {
         const spinalLog = await (<Promise<SpinalLog>>(
           children[0].getElement(true)
         ));
@@ -175,43 +192,40 @@ export default class SpinalServiceLog {
     };
   }
 
-  public getCurrent(spinalLog: SpinalLog): Promise<ISpinalDateValue> {
-    return spinalLog.getCurrent();
+  public async getCurrent(node: SpinalNode): Promise<ISpinalDateValue> {
+    const spinalLog = await new Promise(
+      this.getOrCreateLogProm(node, undefined, false)
+    );
+    return spinalLog?.getCurrent();
   }
 
-  public getDataFromLast24Hours(
-    spinalLog: SpinalLog
+  public async getDataFromLast24Hours(
+    node: SpinalNode
   ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
-    return spinalLog.getDataFromLast24Hours();
+    const spinalLog = await new Promise(
+      this.getOrCreateLogProm(node, undefined, false)
+    );
+    return spinalLog?.getDataFromLast24Hours();
   }
 
-  public getDataFromLastHours(
-    spinalLog: SpinalLog,
+  public async getDataFromLastHours(
+    node: SpinalNode,
     numberOfHours: number = 1
   ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
+    const spinalLog = await new Promise(
+      this.getOrCreateLogProm(node, undefined, false)
+    );
     return spinalLog.getDataFromLastHours(numberOfHours);
   }
 
-  public getDataFromYesterday(
-    spinalLog: SpinalLog
+  public async getDataFromYesterday(
+    node: SpinalNode
   ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
-    return spinalLog.getDataFromYesterday();
-  }
+    const spinalLog = await new Promise(
+      this.getOrCreateLogProm(node, undefined, false)
+    );
 
-  public getFromIntervalTime(
-    spinalLog: SpinalLog,
-    start: string | number | Date = 0,
-    end: string | number | Date = Date.now()
-  ): Promise<ISpinalDateValue[]> {
-    return spinalLog.getFromIntervalTime(start, end);
-  }
-
-  public getFromIntervalTimeGen(
-    spinalLog: SpinalLog,
-    start: string | number | Date = 0,
-    end: string | number | Date = Date.now()
-  ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
-    return spinalLog.getFromIntervalTimeGen(start, end);
+    return spinalLog?.getDataFromYesterday();
   }
 
   async getLogs(node: SpinalNode): Promise<SpinalLog> {
@@ -228,6 +242,86 @@ export default class SpinalServiceLog {
     return prom;
   }
 
+  public async getFromIntervalTime(
+    node: SpinalNode,
+    start: string | number | Date = 0,
+    end: string | number | Date = Date.now()
+  ): Promise<ISpinalDateValue[]> {
+    const spinalLog = await new Promise(
+      this.getOrCreateLogProm(node, undefined, false)
+    );
+
+    return spinalLog?.getFromIntervalTime(start, end);
+  }
+
+  public async getFromIntervalTimeGen(
+    node: SpinalNode,
+    start: string | number | Date = 0,
+    end: string | number | Date = Date.now()
+  ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
+    const spinalLog = await new Promise(
+      this.getOrCreateLogProm(node, undefined, false)
+    );
+    return spinalLog?.getFromIntervalTimeGen(start, end);
+  }
+
+  public async getData(
+    node: SpinalNode,
+    logIntervalDate: ILogInterval
+  ): Promise<ISpinalDateValue[]> {
+    const logs = await this.getLogs(node);
+    if (!logs) throw new Error('endpoint have no logs');
+    return asyncGenToArray<ISpinalDateValue>(
+      await this.getFromIntervalTimeGen(
+        node,
+        logIntervalDate.start,
+        logIntervalDate.end
+      )
+    );
+  }
+
+  public async getCount(
+    node: SpinalNode,
+    logIntervalDate: ILogInterval
+  ): Promise<number> {
+    const data = await this.getData(node, logIntervalDate);
+    return data.length;
+  }
+
+  public async changeWebsocketState(
+    node: SpinalNode,
+    state: WEBSOCKET_STATE
+  ): Promise<SpinalNode> {
+    const children = await node.getChildren(WEBSOCKET_STATE_RELATION);
+    if (children.length > 0) {
+      const stateNode = children[0];
+      stateNode.info.state.set(state);
+      stateNode.info.since.set(Date.now());
+      return stateNode;
+    }
+
+    const stateNode = new SpinalNode('webSocketState', WEBSOCKET_STATE_TYPE);
+    stateNode.add_attr({state, since: Date.now()});
+
+    return node.addChild(
+      stateNode,
+      WEBSOCKET_STATE_RELATION,
+      SPINAL_RELATION_PTR_LST_TYPE
+    );
+  }
+
+  public async getWebsocketState(
+    node: SpinalNode
+  ): Promise<{state: WEBSOCKET_STATE; since: number}> {
+    const children = await node.getChildren(WEBSOCKET_STATE_RELATION);
+    if (children.length === 0) return {state: WEBSOCKET_STATE.unknow, since: 0};
+
+    return {
+      state: children[0].info.state.get(),
+      since: children[0].info.since.get(),
+    };
+  }
+
   public getDateFromLastHours(numberOfHours: number = 1): ILogInterval {
     const end = Date.now();
     const start = new Date();
@@ -240,29 +334,6 @@ export default class SpinalServiceLog {
     const start = new Date();
     start.setDate(start.getDate() - numberOfDays);
     return {start, end};
-  }
-
-  public async getData(
-    node: SpinalNode,
-    logIntervalDate: ILogInterval
-  ): Promise<ISpinalDateValue[]> {
-    const logs = await this.getLogs(node);
-    if (!logs) throw new Error('endpoint have no logs');
-    return asyncGenToArray<ISpinalDateValue>(
-      await this.getFromIntervalTimeGen(
-        logs,
-        logIntervalDate.start,
-        logIntervalDate.end
-      )
-    );
-  }
-
-  async getCount(
-    node: SpinalNode,
-    logIntervalDate: ILogInterval
-  ): Promise<number> {
-    const data = await this.getData(node, logIntervalDate);
-    return data.length;
   }
 }
 
@@ -277,3 +348,4 @@ async function asyncGenToArray<T>(it: AsyncIterableIterator<T>): Promise<T[]> {
 export {asyncGenToArray, SpinalServiceLog};
 export * from './models';
 export * from './interfaces';
+export * from './websocket_const';

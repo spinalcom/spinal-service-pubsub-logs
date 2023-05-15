@@ -23,16 +23,13 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TYPE = exports.REASON = void 0;
-var REASON;
-(function (REASON) {
-    REASON["restart"] = "restart";
-    REASON["send"] = "send";
-    REASON["noDataSent"] = "noDataSent";
-})(REASON = exports.REASON || (exports.REASON = {}));
-var TYPE;
-(function (TYPE) {
-    TYPE["alarm"] = "alarm";
-    TYPE["info"] = "info";
-})(TYPE = exports.TYPE || (exports.TYPE = {}));
-//# sourceMappingURL=ILog.js.map
+exports.WEBSOCKET_STATE_TYPE = exports.WEBSOCKET_STATE_RELATION = exports.WEBSOCKET_STATE = void 0;
+var WEBSOCKET_STATE;
+(function (WEBSOCKET_STATE) {
+    WEBSOCKET_STATE["running"] = "running";
+    WEBSOCKET_STATE["alarm"] = "alarm";
+    WEBSOCKET_STATE["unknow"] = "unknow";
+})(WEBSOCKET_STATE = exports.WEBSOCKET_STATE || (exports.WEBSOCKET_STATE = {}));
+exports.WEBSOCKET_STATE_RELATION = 'hasWebsocketState';
+exports.WEBSOCKET_STATE_TYPE = 'WebsocketState';
+//# sourceMappingURL=websocket_const.js.map

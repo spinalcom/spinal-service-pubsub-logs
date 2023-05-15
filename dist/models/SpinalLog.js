@@ -185,7 +185,7 @@ class SpinalLog extends spinal_core_connectorjs_type_1.Model {
     }
 }
 exports.SpinalLog = SpinalLog;
-SpinalLog.relationName = 'hasLogs';
+SpinalLog.relationName = 'hasWebsocketLogs';
 SpinalLog.nodeTypeName = 'SpinalLog';
 spinal_core_connectorjs_type_1.spinalCore.register_models(SpinalLog);
 exports.default = SpinalLog;

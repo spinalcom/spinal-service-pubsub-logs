@@ -30,7 +30,7 @@ import {SpinalLogArchive} from './SpinalLogArchive';
 import {SpinalLogArchiveDay} from './SpinalLogArchiveDay';
 
 class SpinalLog extends Model {
-  public static relationName: string = 'hasLogs';
+  public static relationName: string = 'hasWebsocketLogs';
   public static nodeTypeName: string = 'SpinalLog';
 
   public id: spinal.Str;

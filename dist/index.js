@@ -57,11 +57,17 @@ exports.SpinalServiceLog = exports.asyncGenToArray = void 0;
 const spinal_model_graph_1 = require("spinal-model-graph");
 const models_1 = require("./models");
 const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
+const websocket_const_1 = require("./websocket_const");
 class SpinalServiceLog {
     constructor() {
         this.spinaLogsDictionnary = new Map();
     }
-    pushFromEndpoint(node, value) {
+    static getInstance() {
+        if (!this._instance)
+            this._instance = new SpinalServiceLog();
+        return this._instance;
+    }
+    pushFromNode(node, value) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const log = yield this.getOrCreateLog(node);
@@ -73,7 +79,7 @@ class SpinalServiceLog {
             return true;
         });
     }
-    insertFromEndpoint(node, value, date) {
+    insertFromNode(node, value, date) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const log = yield this.getOrCreateLog(node);
@@ -104,13 +110,13 @@ class SpinalServiceLog {
             if (this.spinaLogsDictionnary.has(nodeId)) {
                 return this.spinaLogsDictionnary.get(nodeId);
             }
-            const cfg = yield this.getConfigFormEndpoint(node);
+            const cfg = yield this.getConfigFromNode(node);
             const promise = new Promise(this.getOrCreateLogProm(node, cfg));
             this.spinaLogsDictionnary.set(nodeId, promise);
             return promise;
         });
     }
-    getConfigFormEndpoint(node) {
+    getConfigFromNode(node) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const cat = yield spinal_env_viewer_plugin_documentation_service_1.attributeService.getCategoryByName(node, 'default');
@@ -147,21 +153,24 @@ class SpinalServiceLog {
             }
         });
     }
-    getOrCreateLogProm(node, cfg) {
+    getOrCreateLogProm(node, cfg = {
+        maxDay: 2,
+        initialBlockSize: 50,
+    }, createIfNotExist = true) {
         return (resolve) => __awaiter(this, void 0, void 0, function* () {
             const children = yield node.getChildren([models_1.SpinalLog.relationName]);
             let logProm;
-            if (children.length === 0) {
+            if (children.length === 0 && createIfNotExist) {
                 // create element
                 const spinalLog = new models_1.SpinalLog(cfg.initialBlockSize, cfg.maxDay);
                 logProm = spinalLog;
                 // create node
-                const n = new spinal_model_graph_1.SpinalNode('WebsocketLogs', 'Logs', spinalLog);
+                const n = new spinal_model_graph_1.SpinalNode('WebsocketLogs', models_1.SpinalLog.nodeTypeName, spinalLog);
                 n.info.add_attr(spinalLog.id.get());
                 // push node to parent
                 yield node.addChild(n, models_1.SpinalLog.relationName, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
             }
-            else {
+            else if (children.length > 0) {
                 const spinalLog = yield (children[0].getElement(true));
                 yield spinalLog.setConfig(cfg.initialBlockSize, cfg.maxDay);
                 logProm = spinalLog;
@@ -170,23 +179,29 @@ class SpinalServiceLog {
             return logProm;
         });
     }
-    getCurrent(spinalLog) {
-        return spinalLog.getCurrent();
+    getCurrent(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
+            return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getCurrent();
+        });
     }
-    getDataFromLast24Hours(spinalLog) {
-        return spinalLog.getDataFromLast24Hours();
+    getDataFromLast24Hours(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
+            return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getDataFromLast24Hours();
+        });
     }
-    getDataFromLastHours(spinalLog, numberOfHours = 1) {
-        return spinalLog.getDataFromLastHours(numberOfHours);
+    getDataFromLastHours(node, numberOfHours = 1) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
+            return spinalLog.getDataFromLastHours(numberOfHours);
+        });
     }
-    getDataFromYesterday(spinalLog) {
-        return spinalLog.getDataFromYesterday();
-    }
-    getFromIntervalTime(spinalLog, start = 0, end = Date.now()) {
-        return spinalLog.getFromIntervalTime(start, end);
-    }
-    getFromIntervalTimeGen(spinalLog, start = 0, end = Date.now()) {
-        return spinalLog.getFromIntervalTimeGen(start, end);
+    getDataFromYesterday(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
+            return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getDataFromYesterday();
+        });
     }
     getLogs(node) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -203,6 +218,57 @@ class SpinalServiceLog {
             return prom;
         });
     }
+    getFromIntervalTime(node, start = 0, end = Date.now()) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
+            return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getFromIntervalTime(start, end);
+        });
+    }
+    getFromIntervalTimeGen(node, start = 0, end = Date.now()) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
+            return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getFromIntervalTimeGen(start, end);
+        });
+    }
+    getData(node, logIntervalDate) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const logs = yield this.getLogs(node);
+            if (!logs)
+                throw new Error('endpoint have no logs');
+            return asyncGenToArray(yield this.getFromIntervalTimeGen(node, logIntervalDate.start, logIntervalDate.end));
+        });
+    }
+    getCount(node, logIntervalDate) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const data = yield this.getData(node, logIntervalDate);
+            return data.length;
+        });
+    }
+    changeWebsocketState(node, state) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const children = yield node.getChildren(websocket_const_1.WEBSOCKET_STATE_RELATION);
+            if (children.length > 0) {
+                const stateNode = children[0];
+                stateNode.info.state.set(state);
+                stateNode.info.since.set(Date.now());
+                return stateNode;
+            }
+            const stateNode = new spinal_model_graph_1.SpinalNode('webSocketState', websocket_const_1.WEBSOCKET_STATE_TYPE);
+            stateNode.add_attr({ state, since: Date.now() });
+            return node.addChild(stateNode, websocket_const_1.WEBSOCKET_STATE_RELATION, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+        });
+    }
+    getWebsocketState(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const children = yield node.getChildren(websocket_const_1.WEBSOCKET_STATE_RELATION);
+            if (children.length === 0)
+                return { state: websocket_const_1.WEBSOCKET_STATE.unknow, since: 0 };
+            return {
+                state: children[0].info.state.get(),
+                since: children[0].info.since.get(),
+            };
+        });
+    }
     getDateFromLastHours(numberOfHours = 1) {
         const end = Date.now();
         const start = new Date();
@@ -214,20 +280,6 @@ class SpinalServiceLog {
         const start = new Date();
         start.setDate(start.getDate() - numberOfDays);
         return { start, end };
-    }
-    getData(node, logIntervalDate) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const logs = yield this.getLogs(node);
-            if (!logs)
-                throw new Error('endpoint have no logs');
-            return asyncGenToArray(yield this.getFromIntervalTimeGen(logs, logIntervalDate.start, logIntervalDate.end));
-        });
-    }
-    getCount(node, logIntervalDate) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const data = yield this.getData(node, logIntervalDate);
-            return data.length;
-        });
     }
 }
 exports.default = SpinalServiceLog;
@@ -263,4 +315,5 @@ function asyncGenToArray(it) {
 exports.asyncGenToArray = asyncGenToArray;
 __exportStar(require("./models"), exports);
 __exportStar(require("./interfaces"), exports);
+__exportStar(require("./websocket_const"), exports);
 //# sourceMappingURL=index.js.map
