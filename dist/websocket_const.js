@@ -27,7 +27,7 @@ exports.WEBSOCKET_STATE_TYPE = exports.WEBSOCKET_STATE_RELATION = exports.WEBSOC
 var WEBSOCKET_STATE;
 (function (WEBSOCKET_STATE) {
     WEBSOCKET_STATE["running"] = "running";
-    WEBSOCKET_STATE["alarm"] = "alarm";
+    WEBSOCKET_STATE["alert"] = "alert";
     WEBSOCKET_STATE["unknow"] = "unknow";
 })(WEBSOCKET_STATE = exports.WEBSOCKET_STATE || (exports.WEBSOCKET_STATE = {}));
 exports.WEBSOCKET_STATE_RELATION = 'hasWebsocketState';

@@ -1,14 +1,14 @@
-export declare enum REASON {
-    restart = "restart",
-    send = "send",
-    noDataSent = "noDataSent"
-}
-export declare enum TYPE {
-    alarm = "alarm",
-    info = "info"
-}
+export declare type statusType = 'failed' | 'success';
 export interface ILog {
-    reason: REASON;
-    type: TYPE;
-    receiverId?: string;
+    type: string;
+    targetInfo?: {
+        id: string;
+        name: string;
+    };
+    nodeInfo?: {
+        id: string;
+        name: string;
+        [key: string]: string;
+    };
+    action: string;
 }

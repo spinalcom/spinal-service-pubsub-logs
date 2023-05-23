@@ -2,6 +2,7 @@ import { Model } from 'spinal-core-connectorjs_type';
 import { ILog, ISpinalDateValue } from '../interfaces';
 import { SpinalLogArchive } from './SpinalLogArchive';
 import { SpinalLogArchiveDay } from './SpinalLogArchiveDay';
+import { WEBSOCKET_STATE } from '../websocket_const';
 declare class SpinalLog extends Model {
     static relationName: string;
     static nodeTypeName: string;
@@ -12,8 +13,15 @@ declare class SpinalLog extends Model {
     currentProm: Promise<SpinalLogArchiveDay>;
     private loadPtrDictionary;
     maxDay: spinal.Val;
+    private logTypes;
+    private logActions;
     constructor(initialBlockSize?: number, maxDay?: number);
-    getFromIntervalTimeGen(start?: number | string | Date, end?: number | string | Date): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    setState(state: WEBSOCKET_STATE): void;
+    getState(): {
+        state: WEBSOCKET_STATE;
+        since: number;
+    };
+    getFromIntervalTimeGen(start?: number | string | Date, end?: number | string | Date): Promise<ISpinalDateValue[]>;
     getFromIntervalTime(start?: number | string | Date, end?: number | string | Date): Promise<ISpinalDateValue[]>;
     getCurrent(): Promise<ISpinalDateValue>;
     setConfig(initialBlockSize: number, maxDay: number): Promise<void>;
@@ -22,10 +30,13 @@ declare class SpinalLog extends Model {
     getDataOfDay(date: number | string | Date): Promise<SpinalLogArchiveDay>;
     getArchive(): Promise<SpinalLogArchive>;
     getCurrentDay(): Promise<SpinalLogArchiveDay>;
-    getDataFromYesterday(): Promise<AsyncIterableIterator<ISpinalDateValue>>;
-    getDataFromLast24Hours(): Promise<AsyncIterableIterator<ISpinalDateValue>>;
-    getDataFromLastHours(numberOfHours?: number): Promise<AsyncIterableIterator<ISpinalDateValue>>;
-    getDataFromLastDays(numberOfDays?: number): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    getDataFromYesterday(): Promise<ISpinalDateValue[]>;
+    getDataFromLast24Hours(): Promise<ISpinalDateValue[]>;
+    getDataFromLastHours(numberOfHours?: number): Promise<ISpinalDateValue[]>;
+    getDataFromLastDays(numberOfDays?: number): Promise<ISpinalDateValue[]>;
+    private _getLogTypeIndex;
+    private _getLogActionIndex;
+    private _formatLogValue;
 }
 export default SpinalLog;
 export { SpinalLog };

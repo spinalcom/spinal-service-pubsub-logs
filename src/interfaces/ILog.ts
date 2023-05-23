@@ -22,19 +22,23 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 
-export enum REASON {
-  restart = 'restart',
-  send = 'send',
-  noDataSent = 'noDataSent',
-}
+// export enum REASON {
+//   restart = 'restart',
+//   sending = 'send',
+//   noDataSent = 'noDataSent',
+// }
 
-export enum TYPE {
-  alarm = 'alarm',
-  info = 'info',
-}
+// export enum TYPE {
+//   alert = 'alert',
+//   sending = '',
+// }
+
+export type statusType = 'failed' | 'success';
 
 export interface ILog {
-  reason: REASON;
-  type: TYPE;
-  receiverId?: string;
+  type: string;
+  targetInfo?: {id: string; name: string};
+  nodeInfo?: {id: string; name: string; [key: string]: string};
+  // result: statusType;
+  action: string;
 }

@@ -22,12 +22,21 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 
-import {FileSystem, Model, Ptr, spinalCore} from 'spinal-core-connectorjs_type';
+import {
+  FileSystem,
+  Lst,
+  Model,
+  Obj,
+  Ptr,
+  spinalCore,
+} from 'spinal-core-connectorjs_type';
 import {genUID} from '../utils/genUID';
 import {loadPtr} from '../utils/loadPtr';
 import {ILog, ISpinalDateValue} from '../interfaces';
 import {SpinalLogArchive} from './SpinalLogArchive';
 import {SpinalLogArchiveDay} from './SpinalLogArchiveDay';
+import {WEBSOCKET_STATE} from '../websocket_const';
+import {asyncGenToArray} from '../';
 
 class SpinalLog extends Model {
   public static relationName: string = 'hasWebsocketLogs';
@@ -45,6 +54,8 @@ class SpinalLog extends Model {
   >;
 
   public maxDay: spinal.Val;
+  private logTypes: spinal.Lst;
+  private logActions: spinal.Lst;
 
   constructor(initialBlockSize: number = 50, maxDay: number = 2) {
     super();
@@ -62,15 +73,34 @@ class SpinalLog extends Model {
       archive: new Ptr(archive),
       currentArchive: new Ptr(0),
       currentData: 0,
+      state: {state: WEBSOCKET_STATE.unknow, since: Date.now()},
+      logTypes: new Lst([]),
+      logActions: new Lst([]),
     });
+  }
+
+  public setState(state: WEBSOCKET_STATE) {
+    this.state.since.set(Date.now());
+    this.state.state.set(state);
+  }
+
+  public getState(): {state: WEBSOCKET_STATE; since: number} {
+    return this.state.get();
   }
 
   public async getFromIntervalTimeGen(
     start: number | string | Date = 0,
     end: number | string | Date = Date.now()
-  ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
+  ): Promise<ISpinalDateValue[]> {
     const archive = await this.getArchive();
-    return archive.getFromIntervalTimeGen(start, end);
+    const gen = archive.getFromIntervalTimeGen(start, end);
+    const list = await asyncGenToArray(gen);
+    return list.map(({date, value}) => {
+      return {
+        date,
+        value: this._formatLogValue(value),
+      };
+    });
   }
 
   public async getFromIntervalTime(
@@ -78,7 +108,13 @@ class SpinalLog extends Model {
     end: number | string | Date = Date.now()
   ): Promise<ISpinalDateValue[]> {
     const archive = await this.getArchive();
-    return archive.getFromIntervalTime(start, end);
+    const list = await archive.getFromIntervalTime(start, end);
+    return list.map(({date, value}) => {
+      return {
+        date,
+        value: this._formatLogValue(value),
+      };
+    });
   }
 
   public async getCurrent(): Promise<ISpinalDateValue> {
@@ -97,7 +133,9 @@ class SpinalLog extends Model {
       currentDay = await archive.getTodayArchive();
     }
     const len = currentDay.length.get();
-    return currentDay.get(len - 1);
+    const {date, value} = currentDay.get(len - 1);
+
+    return {date, value: this._formatLogValue(value)};
   }
 
   public async setConfig(
@@ -112,6 +150,8 @@ class SpinalLog extends Model {
   }
 
   public async push(value: ILog): Promise<void> {
+    const valCopy = Object.assign({}, value);
+
     if (this.maxDay.get() === 0) {
       const archive = await this.getArchive();
       archive.purgeArchive(this.maxDay.get());
@@ -132,7 +172,10 @@ class SpinalLog extends Model {
       this.currentProm = archive.getTodayArchive();
       currentDay = await this.currentProm;
     }
-    currentDay.push(value);
+    valCopy.type = this._getLogTypeIndex(value.type) as any;
+    valCopy.action = this._getLogActionIndex(value.action) as any;
+
+    currentDay.push(valCopy);
     archive.purgeArchive(this.maxDay.get());
   }
 
@@ -140,11 +183,17 @@ class SpinalLog extends Model {
     value: ILog,
     date: number | string | Date
   ): Promise<void> {
+    const valCopy = Object.assign({}, value);
+
     let currentDay: SpinalLogArchiveDay;
     const archive = await this.getArchive();
+
+    valCopy.type = this._getLogTypeIndex(value.type) as any;
+    valCopy.action = this._getLogActionIndex(value.action) as any;
+
     if (this.maxDay.get() !== 0) {
       currentDay = await archive.getOrCreateArchiveAtDate(date);
-      currentDay.insert(value, date);
+      currentDay.insert(valCopy, date);
     }
     archive.purgeArchive(this.maxDay.get());
   }
@@ -172,39 +221,85 @@ class SpinalLog extends Model {
     return this.currentProm;
   }
 
-  public async getDataFromYesterday(): Promise<
-    AsyncIterableIterator<ISpinalDateValue>
-  > {
+  public async getDataFromYesterday(): Promise<ISpinalDateValue[]> {
     const archive = await this.getArchive();
     const end = new Date().setUTCHours(0, 0, 0, -1);
     const start = new Date(end).setUTCHours(0, 0, 0, 0);
-    return archive.getFromIntervalTimeGen(start, end);
+    const gen = archive.getFromIntervalTimeGen(start, end);
+    const list = await asyncGenToArray(gen);
+
+    return list.map(({date, value}) => {
+      return {
+        date,
+        value: this._formatLogValue(value),
+      };
+    });
   }
 
-  public getDataFromLast24Hours(): Promise<
-    AsyncIterableIterator<ISpinalDateValue>
-  > {
+  public async getDataFromLast24Hours(): Promise<ISpinalDateValue[]> {
     return this.getDataFromLastDays(1);
   }
 
   public async getDataFromLastHours(
     numberOfHours: number = 1
-  ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
+  ): Promise<ISpinalDateValue[]> {
     const archive = await this.getArchive();
     const end = Date.now();
     const start = new Date();
     start.setUTCHours(start.getUTCHours() - numberOfHours);
-    return archive.getFromIntervalTimeGen(start, end);
+    const gen = archive.getFromIntervalTimeGen(start, end);
+    const list = await asyncGenToArray(gen);
+    return list.map(({date, value}) => {
+      return {
+        date,
+        value: this._formatLogValue(value),
+      };
+    });
   }
 
   public async getDataFromLastDays(
     numberOfDays: number = 1
-  ): Promise<AsyncIterableIterator<ISpinalDateValue>> {
+  ): Promise<ISpinalDateValue[]> {
     const archive = await this.getArchive();
     const end = Date.now();
     const start = new Date();
     start.setDate(start.getDate() - numberOfDays);
-    return archive.getFromIntervalTimeGen(start, end);
+    const gen = archive.getFromIntervalTimeGen(start, end);
+    const list = await asyncGenToArray(gen);
+    return list.map(({date, value}) => {
+      return {
+        date,
+        value: this._formatLogValue(value),
+      };
+    });
+  }
+
+  private _getLogTypeIndex(logType: string): number {
+    for (let i = 0; i < this.logTypes.length; i++) {
+      const element = this.logTypes[i].get();
+      if (element.toLowerCase() === logType.toLowerCase()) return i;
+    }
+
+    this.logTypes.push(logType.toLowerCase());
+    return this.logTypes.length - 1;
+  }
+
+  private _getLogActionIndex(action: string): number {
+    for (let i = 0; i < this.logActions.length; i++) {
+      const element = this.logActions[i].get();
+      if (element.toLowerCase() === action.toLowerCase()) return i;
+    }
+
+    this.logActions.push(action.toLowerCase());
+    return this.logActions.length - 1;
+  }
+
+  private _formatLogValue(log: ILog): ILog {
+    const obj = Object.assign({}, log);
+    obj.type = this.logTypes[log.type].get();
+    obj.action = this.logActions[log.action].get();
+
+    return obj;
   }
 }
 

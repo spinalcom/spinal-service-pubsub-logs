@@ -1,7 +1,6 @@
 import { Model } from 'spinal-core-connectorjs_type';
 import { ILog, ISpinalDateValue, ISpinalDateValueArray } from '../interfaces';
 export declare class SpinalLogArchiveDay extends Model {
-    private lstDate;
     private lstValue;
     length: spinal.Val;
     dateDay: spinal.Val;

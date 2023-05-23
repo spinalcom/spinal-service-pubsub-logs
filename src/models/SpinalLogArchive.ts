@@ -121,6 +121,9 @@ class SpinalLogArchive extends Model {
         ? new Date(end).getTime()
         : end;
 
+    if (!normalizedStart) throw new Error(`invalid date ${start}`);
+    if (!normalizedEnd) throw new Error(`invalid date ${end}`);
+
     for (let idx = 0; idx < this.lstDate.length; idx += 1) {
       const element = this.lstDate[idx].get();
       if (normalizedStart > element) continue;

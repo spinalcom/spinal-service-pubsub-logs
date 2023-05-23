@@ -1,6 +1,6 @@
 export declare enum WEBSOCKET_STATE {
     running = "running",
-    alarm = "alarm",
+    alert = "alert",
     unknow = "unknow"
 }
 export declare const WEBSOCKET_STATE_RELATION = "hasWebsocketState";

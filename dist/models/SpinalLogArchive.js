@@ -125,6 +125,10 @@ class SpinalLogArchive extends spinal_core_connectorjs_type_1.Model {
             const normalizedEnd = typeof end === 'number' || typeof end === 'string'
                 ? new Date(end).getTime()
                 : end;
+            if (!normalizedStart)
+                throw new Error(`invalid date ${start}`);
+            if (!normalizedEnd)
+                throw new Error(`invalid date ${end}`);
             for (let idx = 0; idx < this.lstDate.length; idx += 1) {
                 const element = this.lstDate[idx].get();
                 if (normalizedStart > element)
@@ -150,26 +154,19 @@ class SpinalLogArchive extends spinal_core_connectorjs_type_1.Model {
         });
     }
     getFromIntervalTime(start, end = Date.now()) {
-        var _a, e_1, _b, _c;
+        var e_1, _a;
         return __awaiter(this, void 0, void 0, function* () {
             const result = [];
             try {
-                for (var _d = true, _e = __asyncValues(this.getFromIntervalTimeGen(start, end)), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
-                    _c = _f.value;
-                    _d = false;
-                    try {
-                        const data = _c;
-                        result.push(data);
-                    }
-                    finally {
-                        _d = true;
-                    }
+                for (var _b = __asyncValues(this.getFromIntervalTimeGen(start, end)), _c; _c = yield _b.next(), !_c.done;) {
+                    const data = _c.value;
+                    result.push(data);
                 }
             }
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+                    if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
                 }
                 finally { if (e_1) throw e_1.error; }
             }

@@ -14,17 +14,17 @@ export default class SpinalServiceLog {
     getOrCreateLog(node: SpinalNode): Promise<SpinalLog>;
     private getConfigFromNode;
     private getOrCreateLogProm;
-    getCurrent(node: SpinalNode): Promise<ISpinalDateValue>;
-    getDataFromLast24Hours(node: SpinalNode): Promise<AsyncIterableIterator<ISpinalDateValue>>;
-    getDataFromLastHours(node: SpinalNode, numberOfHours?: number): Promise<AsyncIterableIterator<ISpinalDateValue>>;
-    getDataFromYesterday(node: SpinalNode): Promise<AsyncIterableIterator<ISpinalDateValue>>;
-    getLogs(node: SpinalNode): Promise<SpinalLog>;
-    getFromIntervalTime(node: SpinalNode, start?: string | number | Date, end?: string | number | Date): Promise<ISpinalDateValue[]>;
-    getFromIntervalTimeGen(node: SpinalNode, start?: string | number | Date, end?: string | number | Date): Promise<AsyncIterableIterator<ISpinalDateValue>>;
+    getCurrent(spinalLog: SpinalLog): Promise<ISpinalDateValue>;
+    getDataFromLast24Hours(spinalLog: SpinalLog): Promise<ISpinalDateValue[]>;
+    getDataFromLastHours(spinalLog: SpinalLog, numberOfHours?: number): Promise<ISpinalDateValue[]>;
+    getDataFromYesterday(spinalLog: SpinalLog): Promise<ISpinalDateValue[]>;
+    getLog(node: SpinalNode): Promise<SpinalLog>;
+    getFromIntervalTime(spinalLog: SpinalLog, start?: string | number | Date, end?: string | number | Date): Promise<ISpinalDateValue[]>;
+    getFromIntervalTimeGen(spinalLog: SpinalLog, start?: string | number | Date, end?: string | number | Date): Promise<ISpinalDateValue[]>;
     getData(node: SpinalNode, logIntervalDate: ILogInterval): Promise<ISpinalDateValue[]>;
     getCount(node: SpinalNode, logIntervalDate: ILogInterval): Promise<number>;
-    changeWebsocketState(node: SpinalNode, state: WEBSOCKET_STATE): Promise<SpinalNode>;
-    getWebsocketState(node: SpinalNode): Promise<{
+    changeWebsocketState(spinalLog: SpinalLog, state: WEBSOCKET_STATE): Promise<void>;
+    getWebsocketState(spinalLog: SpinalLog): Promise<{
         state: WEBSOCKET_STATE;
         since: number;
     }>;

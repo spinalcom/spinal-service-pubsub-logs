@@ -24,7 +24,7 @@
 
 export enum WEBSOCKET_STATE {
   running = 'running',
-  alarm = 'alarm',
+  alert = 'alert',
   unknow = 'unknow',
 }
 

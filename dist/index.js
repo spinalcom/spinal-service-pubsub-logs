@@ -57,7 +57,6 @@ exports.SpinalServiceLog = exports.asyncGenToArray = void 0;
 const spinal_model_graph_1 = require("spinal-model-graph");
 const models_1 = require("./models");
 const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
-const websocket_const_1 = require("./websocket_const");
 class SpinalServiceLog {
     constructor() {
         this.spinaLogsDictionnary = new Map();
@@ -86,6 +85,7 @@ class SpinalServiceLog {
                 yield log.insert(value, date);
             }
             catch (error) {
+                console.error(error);
                 return false;
             }
             return true;
@@ -179,31 +179,27 @@ class SpinalServiceLog {
             return logProm;
         });
     }
-    getCurrent(node) {
+    getCurrent(spinalLog) {
         return __awaiter(this, void 0, void 0, function* () {
-            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
             return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getCurrent();
         });
     }
-    getDataFromLast24Hours(node) {
+    getDataFromLast24Hours(spinalLog) {
         return __awaiter(this, void 0, void 0, function* () {
-            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
             return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getDataFromLast24Hours();
         });
     }
-    getDataFromLastHours(node, numberOfHours = 1) {
+    getDataFromLastHours(spinalLog, numberOfHours = 1) {
         return __awaiter(this, void 0, void 0, function* () {
-            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
             return spinalLog.getDataFromLastHours(numberOfHours);
         });
     }
-    getDataFromYesterday(node) {
+    getDataFromYesterday(spinalLog) {
         return __awaiter(this, void 0, void 0, function* () {
-            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
             return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getDataFromYesterday();
         });
     }
-    getLogs(node) {
+    getLog(node) {
         return __awaiter(this, void 0, void 0, function* () {
             const nodeId = node.getId().get();
             if (this.spinaLogsDictionnary.has(nodeId)) {
@@ -218,24 +214,22 @@ class SpinalServiceLog {
             return prom;
         });
     }
-    getFromIntervalTime(node, start = 0, end = Date.now()) {
+    getFromIntervalTime(spinalLog, start = 0, end = Date.now()) {
         return __awaiter(this, void 0, void 0, function* () {
-            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
             return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getFromIntervalTime(start, end);
         });
     }
-    getFromIntervalTimeGen(node, start = 0, end = Date.now()) {
+    getFromIntervalTimeGen(spinalLog, start = 0, end = Date.now()) {
         return __awaiter(this, void 0, void 0, function* () {
-            const spinalLog = yield new Promise(this.getOrCreateLogProm(node, undefined, false));
             return spinalLog === null || spinalLog === void 0 ? void 0 : spinalLog.getFromIntervalTimeGen(start, end);
         });
     }
     getData(node, logIntervalDate) {
         return __awaiter(this, void 0, void 0, function* () {
-            const logs = yield this.getLogs(node);
+            const logs = yield this.getLog(node);
             if (!logs)
-                throw new Error('endpoint have no logs');
-            return asyncGenToArray(yield this.getFromIntervalTimeGen(node, logIntervalDate.start, logIntervalDate.end));
+                throw new Error('node have no logs');
+            return this.getFromIntervalTimeGen(logs, logIntervalDate.start, logIntervalDate.end);
         });
     }
     getCount(node, logIntervalDate) {
@@ -244,29 +238,14 @@ class SpinalServiceLog {
             return data.length;
         });
     }
-    changeWebsocketState(node, state) {
+    changeWebsocketState(spinalLog, state) {
         return __awaiter(this, void 0, void 0, function* () {
-            const children = yield node.getChildren(websocket_const_1.WEBSOCKET_STATE_RELATION);
-            if (children.length > 0) {
-                const stateNode = children[0];
-                stateNode.info.state.set(state);
-                stateNode.info.since.set(Date.now());
-                return stateNode;
-            }
-            const stateNode = new spinal_model_graph_1.SpinalNode('webSocketState', websocket_const_1.WEBSOCKET_STATE_TYPE);
-            stateNode.add_attr({ state, since: Date.now() });
-            return node.addChild(stateNode, websocket_const_1.WEBSOCKET_STATE_RELATION, spinal_model_graph_1.SPINAL_RELATION_PTR_LST_TYPE);
+            spinalLog.setState(state);
         });
     }
-    getWebsocketState(node) {
+    getWebsocketState(spinalLog) {
         return __awaiter(this, void 0, void 0, function* () {
-            const children = yield node.getChildren(websocket_const_1.WEBSOCKET_STATE_RELATION);
-            if (children.length === 0)
-                return { state: websocket_const_1.WEBSOCKET_STATE.unknow, since: 0 };
-            return {
-                state: children[0].info.state.get(),
-                since: children[0].info.since.get(),
-            };
+            return spinalLog.getState();
         });
     }
     getDateFromLastHours(numberOfHours = 1) {
@@ -285,27 +264,20 @@ class SpinalServiceLog {
 exports.default = SpinalServiceLog;
 exports.SpinalServiceLog = SpinalServiceLog;
 function asyncGenToArray(it) {
-    var _a, it_1, it_1_1;
-    var _b, e_1, _c, _d;
+    var it_1, it_1_1;
+    var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const res = [];
         try {
-            for (_a = true, it_1 = __asyncValues(it); it_1_1 = yield it_1.next(), _b = it_1_1.done, !_b;) {
-                _d = it_1_1.value;
-                _a = false;
-                try {
-                    const i = _d;
-                    res.push(i);
-                }
-                finally {
-                    _a = true;
-                }
+            for (it_1 = __asyncValues(it); it_1_1 = yield it_1.next(), !it_1_1.done;) {
+                const i = it_1_1.value;
+                res.push(i);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (!_a && !_b && (_c = it_1.return)) yield _c.call(it_1);
+                if (it_1_1 && !it_1_1.done && (_a = it_1.return)) yield _a.call(it_1);
             }
             finally { if (e_1) throw e_1.error; }
         }
