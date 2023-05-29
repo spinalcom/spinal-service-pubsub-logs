@@ -117,7 +117,7 @@ export default class SpinalServiceLog {
             break;
         }
       }
-      maxDay = maxDay === null ? 2 : maxDay;
+      maxDay = maxDay === null ? 14 : maxDay;
       initialBlockSize = initialBlockSize === null ? 50 : initialBlockSize;
       //
       await attributeService.addAttributeByCategoryName(
@@ -139,7 +139,7 @@ export default class SpinalServiceLog {
       };
     } catch (e) {
       return {
-        maxDay: 2,
+        maxDay: 14,
         initialBlockSize: 50,
       };
     }
@@ -148,7 +148,7 @@ export default class SpinalServiceLog {
   private getOrCreateLogProm(
     node: SpinalNode,
     cfg: {maxDay: number; initialBlockSize: number} = {
-      maxDay: 2,
+      maxDay: 14,
       initialBlockSize: 50,
     },
     createIfNotExist: boolean = true

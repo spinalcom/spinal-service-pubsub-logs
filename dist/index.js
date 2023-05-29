@@ -135,7 +135,7 @@ class SpinalServiceLog {
                             break;
                     }
                 }
-                maxDay = maxDay === null ? 2 : maxDay;
+                maxDay = maxDay === null ? 14 : maxDay;
                 initialBlockSize = initialBlockSize === null ? 50 : initialBlockSize;
                 //
                 yield spinal_env_viewer_plugin_documentation_service_1.attributeService.addAttributeByCategoryName(node, 'default', 'websocket log maxDay', maxDay.toString());
@@ -147,14 +147,14 @@ class SpinalServiceLog {
             }
             catch (e) {
                 return {
-                    maxDay: 2,
+                    maxDay: 14,
                     initialBlockSize: 50,
                 };
             }
         });
     }
     getOrCreateLogProm(node, cfg = {
-        maxDay: 2,
+        maxDay: 14,
         initialBlockSize: 50,
     }, createIfNotExist = true) {
         return (resolve) => __awaiter(this, void 0, void 0, function* () {
