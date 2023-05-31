@@ -28,5 +28,8 @@ export enum WEBSOCKET_STATE {
   unknow = 'unknow',
 }
 
+export const SEND_EVENT = 'send';
+export const RECEIVE_EVENT = 'receive';
+
 export const WEBSOCKET_STATE_RELATION = 'hasWebsocketState';
 export const WEBSOCKET_STATE_TYPE = 'WebsocketState';
