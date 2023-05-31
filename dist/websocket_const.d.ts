@@ -5,5 +5,6 @@ export declare enum WEBSOCKET_STATE {
 }
 export declare const SEND_EVENT = "send";
 export declare const RECEIVE_EVENT = "receive";
+export declare const ALERT_EVENT = "alert";
 export declare const WEBSOCKET_STATE_RELATION = "hasWebsocketState";
 export declare const WEBSOCKET_STATE_TYPE = "WebsocketState";

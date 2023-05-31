@@ -23,7 +23,7 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WEBSOCKET_STATE_TYPE = exports.WEBSOCKET_STATE_RELATION = exports.RECEIVE_EVENT = exports.SEND_EVENT = exports.WEBSOCKET_STATE = void 0;
+exports.WEBSOCKET_STATE_TYPE = exports.WEBSOCKET_STATE_RELATION = exports.ALERT_EVENT = exports.RECEIVE_EVENT = exports.SEND_EVENT = exports.WEBSOCKET_STATE = void 0;
 var WEBSOCKET_STATE;
 (function (WEBSOCKET_STATE) {
     WEBSOCKET_STATE["running"] = "running";
@@ -32,6 +32,7 @@ var WEBSOCKET_STATE;
 })(WEBSOCKET_STATE = exports.WEBSOCKET_STATE || (exports.WEBSOCKET_STATE = {}));
 exports.SEND_EVENT = 'send';
 exports.RECEIVE_EVENT = 'receive';
+exports.ALERT_EVENT = 'alert';
 exports.WEBSOCKET_STATE_RELATION = 'hasWebsocketState';
 exports.WEBSOCKET_STATE_TYPE = 'WebsocketState';
 //# sourceMappingURL=websocket_const.js.map
